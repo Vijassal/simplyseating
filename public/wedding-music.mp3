@@ -1,0 +1,10 @@
+# This is a placeholder file for your wedding music
+# 
+# To add your actual music file:
+# 1. Replace this file with your actual .mp3 file
+# 2. Name it exactly "wedding-music.mp3" 
+# 3. Keep the file size under 5MB for optimal loading
+# 4. Recommended duration: 2-4 minutes (will loop automatically)
+#
+# The music will start playing when users interact with the search input
+# and will loop continuously in the background.

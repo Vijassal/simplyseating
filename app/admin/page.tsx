@@ -17,6 +17,8 @@ import {
   Eye,
   MapPin,
   Sparkles,
+  Music,
+  Volume2,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -60,6 +62,10 @@ interface AppSettings {
   tableCardCelebrationTextColor: string
   tableCardCelebrationBoxOpacity: number
   tableCardTableNumberBoxOpacity: number
+  backgroundMusicUrl: string | null
+  backgroundMusicEnabled: boolean
+  backgroundMusicVolume: number
+  backgroundMusicAutoplay: boolean
 }
 
 const convertToSnakeCase = (obj: AppSettings) => {
@@ -89,6 +95,10 @@ const convertToSnakeCase = (obj: AppSettings) => {
     table_card_celebration_text_color: obj.tableCardCelebrationTextColor,
     table_card_celebration_box_opacity: Math.round(obj.tableCardCelebrationBoxOpacity * 100), // Convert to integer
     table_card_table_number_box_opacity: Math.round(obj.tableCardTableNumberBoxOpacity * 100), // Convert to integer
+    background_music_url: obj.backgroundMusicUrl,
+    background_music_enabled: obj.backgroundMusicEnabled,
+    background_music_volume: obj.backgroundMusicVolume,
+    background_music_autoplay: obj.backgroundMusicAutoplay,
   }
 }
 
@@ -121,6 +131,10 @@ const convertFromSnakeCase = (obj: any): AppSettings => {
     tableCardCelebrationTextColor: obj.table_card_celebration_text_color || "#374151",
     tableCardCelebrationBoxOpacity: (obj.table_card_celebration_box_opacity || 10) / 100, // Convert from integer to decimal
     tableCardTableNumberBoxOpacity: (obj.table_card_table_number_box_opacity || 100) / 100, // Convert from integer to decimal
+    backgroundMusicUrl: obj.background_music_url || null,
+    backgroundMusicEnabled: obj.background_music_enabled !== false, // Default to true
+    backgroundMusicVolume: obj.background_music_volume || 25,
+    backgroundMusicAutoplay: obj.background_music_autoplay !== false, // Default to true
   }
 }
 
@@ -172,6 +186,10 @@ export default function AdminPage() {
     tableCardCelebrationTextColor: "#374151",
     tableCardCelebrationBoxOpacity: 0.1,
     tableCardTableNumberBoxOpacity: 100,
+    backgroundMusicUrl: null,
+    backgroundMusicEnabled: true,
+    backgroundMusicVolume: 25,
+    backgroundMusicAutoplay: true,
   })
 
   useEffect(() => {
@@ -273,6 +291,56 @@ export default function AdminPage() {
         setAppSettings((prev) => ({
           ...prev,
           tableCardBackgroundImage: e.target?.result as string,
+        }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleMusicUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Check file size (max 15MB to accommodate larger files)
+      if (file.size > 15 * 1024 * 1024) {
+        alert("Music file must be smaller than 15MB")
+        return
+      }
+      
+      // Check file type - support audio files including M4P
+      const supportedTypes = [
+        'audio/mpeg',           // MP3
+        'audio/mp4',            // MPEG-4 audio
+        'audio/m4a',            // M4A
+        'audio/m4p',            // M4P (iTunes protected)
+        'audio/wav',            // WAV
+        'audio/ogg',            // OGG
+        'audio/webm',           // WebM
+        'audio/aac',            // AAC
+        'audio/x-m4a',          // Alternative M4A MIME type
+        'audio/mp4a-latm',      // MPEG-4 AAC
+        'audio/x-m4p',          // Alternative M4P MIME type
+      ]
+      
+      const isValidType = supportedTypes.includes(file.type) || 
+                         file.name.toLowerCase().endsWith('.mp4') ||
+                         file.name.toLowerCase().endsWith('.m4a') ||
+                         file.name.toLowerCase().endsWith('.m4p') ||
+                         file.name.toLowerCase().endsWith('.mp3') ||
+                         file.name.toLowerCase().endsWith('.wav') ||
+                         file.name.toLowerCase().endsWith('.ogg') ||
+                         file.name.toLowerCase().endsWith('.webm') ||
+                         file.name.toLowerCase().endsWith('.aac')
+      
+      if (!isValidType) {
+        alert("Please select a supported audio file (MP3, MP4, M4A, M4P, WAV, OGG, WebM, AAC)")
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setAppSettings((prev) => ({
+          ...prev,
+          backgroundMusicUrl: e.target?.result as string,
         }))
       }
       reader.readAsDataURL(file)
@@ -982,6 +1050,112 @@ export default function AdminPage() {
                           <span className="text-sm text-slate-600">%</span>
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Background Music Section */}
+                  <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm sm:text-base">
+                      <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                      Background Music
+                    </h3>
+
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs sm:text-sm font-medium text-slate-700">Music File</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="file"
+                            accept="audio/*,.mp4,.m4a,.m4p,.mp3,.wav,.ogg,.webm,.aac"
+                            onChange={handleMusicUpload}
+                            className="flex-1 border-slate-300 focus:border-slate-500 text-sm"
+                          />
+                          {appSettings.backgroundMusicUrl && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setAppSettings((prev) => ({ ...prev, backgroundMusicUrl: null }))}
+                              className="border-slate-300 hover:bg-slate-50"
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Upload an MP3, MP4, M4A, M4P, WAV, OGG, WebM, or AAC file (max 15MB). Recommended: 2-4 minutes for seamless looping.
+                        </p>
+                        <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                          ⚠️ Note: M4P files (iTunes protected) may not play in all browsers due to DRM restrictions. Consider converting to MP3 or M4A for better compatibility.
+                        </p>
+                      </div>
+
+                      {appSettings.backgroundMusicUrl && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 p-3 bg-white rounded-lg border border-slate-200">
+                            <Music className="h-4 w-4 text-slate-600" />
+                            <span className="text-sm text-slate-700">Music file uploaded successfully</span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs text-slate-600">Volume</Label>
+                              <div className="flex items-center gap-2">
+                                <Volume2 className="h-4 w-4 text-slate-500" />
+                                <Input
+                                  type="range"
+                                  min="0"
+                                  max="100"
+                                  value={appSettings.backgroundMusicVolume}
+                                  onChange={(e) =>
+                                    setAppSettings((prev) => ({
+                                      ...prev,
+                                      backgroundMusicVolume: Number.parseInt(e.target.value),
+                                    }))
+                                  }
+                                  className="flex-1"
+                                />
+                                <span className="text-xs text-slate-600 w-8">
+                                  {appSettings.backgroundMusicVolume}%
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-xs text-slate-600">Settings</Label>
+                              <div className="space-y-2">
+                                <label className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={appSettings.backgroundMusicEnabled}
+                                    onChange={(e) =>
+                                      setAppSettings((prev) => ({
+                                        ...prev,
+                                        backgroundMusicEnabled: e.target.checked,
+                                      }))
+                                    }
+                                    className="rounded border-slate-300"
+                                  />
+                                  <span className="text-xs text-slate-600">Enable background music</span>
+                                </label>
+                                <label className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={appSettings.backgroundMusicAutoplay}
+                                    onChange={(e) =>
+                                      setAppSettings((prev) => ({
+                                        ...prev,
+                                        backgroundMusicAutoplay: e.target.checked,
+                                      }))
+                                    }
+                                    className="rounded border-slate-300"
+                                  />
+                                  <span className="text-xs text-slate-600">Auto-play on user interaction</span>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 

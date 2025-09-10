@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
+import { BackgroundMusic } from "@/components/background-music"
 
 interface Guest {
   id: string
@@ -42,6 +43,10 @@ interface AppSettings {
   tableCardCelebrationTextColor: string
   tableCardCelebrationBoxOpacity: number
   tableCardTableNumberBoxOpacity: number
+  backgroundMusicUrl: string | null
+  backgroundMusicEnabled: boolean
+  backgroundMusicVolume: number
+  backgroundMusicAutoplay: boolean
 }
 
 export default function WeddingSeatingApp() {
@@ -50,6 +55,7 @@ export default function WeddingSeatingApp() {
   const [selectedTableGuests, setSelectedTableGuests] = useState<Guest[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
   const [loading, setLoading] = useState(true)
+  const [musicInitialized, setMusicInitialized] = useState(false)
 
   const [appSettings, setAppSettings] = useState<AppSettings>({
     title: "Find Your Seat",
@@ -79,6 +85,10 @@ export default function WeddingSeatingApp() {
     tableCardCelebrationTextColor: "#374151",
     tableCardCelebrationBoxOpacity: 0.1,
     tableCardTableNumberBoxOpacity: 100,
+    backgroundMusicUrl: null,
+    backgroundMusicEnabled: true,
+    backgroundMusicVolume: 25,
+    backgroundMusicAutoplay: true,
   })
 
   useEffect(() => {
@@ -173,6 +183,10 @@ export default function WeddingSeatingApp() {
               settingsData.table_card_celebration_text_color || appSettings.tableCardCelebrationTextColor,
             tableCardCelebrationBoxOpacity: (settingsData.table_card_celebration_box_opacity || 20) / 100,
             tableCardTableNumberBoxOpacity: (settingsData.table_card_table_number_box_opacity || 50) / 100,
+            backgroundMusicUrl: settingsData.background_music_url || null,
+            backgroundMusicEnabled: settingsData.background_music_enabled !== false,
+            backgroundMusicVolume: settingsData.background_music_volume || 25,
+            backgroundMusicAutoplay: settingsData.background_music_autoplay !== false,
           })
         }
       } catch (error) {
@@ -260,14 +274,6 @@ export default function WeddingSeatingApp() {
           >
             {appSettings.subtitle}
           </p>
-          <div className="mt-4 sm:mt-6">
-            <Link
-              href="/admin"
-              className="text-xs sm:text-sm text-muted-foreground hover:text-accent transition-colors underline decoration-dotted"
-            >
-              Event Management
-            </Link>
-          </div>
         </div>
 
         <div className="relative mb-6 sm:mb-8">
@@ -277,7 +283,17 @@ export default function WeddingSeatingApp() {
               type="text"
               placeholder="Enter your full name..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                if (!musicInitialized) {
+                  setMusicInitialized(true)
+                }
+              }}
+              onFocus={() => {
+                if (!musicInitialized) {
+                  setMusicInitialized(true)
+                }
+              }}
               className="pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 text-base sm:text-lg bg-card border-2 border-border focus:border-accent transition-all duration-200 shadow-sm"
             />
           </div>
@@ -426,6 +442,15 @@ export default function WeddingSeatingApp() {
           </Card>
         )}
       </div>
+      
+      {appSettings.backgroundMusicEnabled && appSettings.backgroundMusicUrl && (
+        <BackgroundMusic 
+          musicUrl={appSettings.backgroundMusicUrl}
+          volume={appSettings.backgroundMusicVolume}
+          autoplay={appSettings.backgroundMusicAutoplay}
+          onUserInteraction={() => setMusicInitialized(true)} 
+        />
+      )}
     </div>
   )
 }
