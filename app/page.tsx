@@ -97,7 +97,7 @@ export default function WeddingSeatingApp() {
 
       try {
         // Load guests from database
-        const { data: guestsData, error: guestsError } = await supabase.from("wedding_guests").select("*").order("name")
+        const { data: guestsData, error: guestsError } = await supabase.from("wedding_guests").select("*")
 
         if (guestsError) {
           console.error("Error loading guests:", guestsError)
